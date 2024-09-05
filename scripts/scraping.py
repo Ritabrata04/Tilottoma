@@ -1,111 +1,61 @@
+import os
 import requests
 from bs4 import BeautifulSoup
-import os
-from tqdm import tqdm
-from urllib.parse import urljoin
-from fake_useragent import UserAgent
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-import time
-import random
+from PIL import Image
+from io import BytesIO
 
-# Base URL of the page to scrape
-url = 'https://www.pexels.com/search/waste/'
-
-# Function to create a random delay
-def random_delay():
-    delay = random.uniform(1, 5)
-    print(f"Sleeping for {delay:.2f} seconds...")
-    time.sleep(delay)
-
-# Setup Selenium with headless Chrome
-chrome_options = Options()
-chrome_options.add_argument("--headless")
-chrome_options.add_argument("--no-sandbox")
-chrome_options.add_argument("--disable-dev-shm-usage")
-driver = webdriver.Chrome(options=chrome_options)
-
-# Use Selenium to get the page source
-print(f"Attempting to connect to {url} using Selenium...")
-try:
-    driver.get(url)
-    random_delay()  # Add a random delay
-    html = driver.page_source
-    print("Successfully retrieved the HTML content using Selenium.")
-except Exception as e:
-    print(f"Failed to retrieve the content with Selenium. Error: {e}")
-    driver.quit()
-    raise SystemExit(e)
-
-# Parse the HTML content using BeautifulSoup
-soup = BeautifulSoup(html, 'html.parser')
-print("HTML content parsed successfully.")
-driver.quit()
-
-# Directory to save images
-category = 'household_waste'
-base_dir = os.path.join(r"C:\Users\TATHAGATA GHOSH\Desktop\hackX_env\Dataset\Tilottoma\dataset\non_menstrual", category)
-os.makedirs(base_dir, exist_ok=True)
-print(f"Images will be saved in: {base_dir}")
-
-# Function to download images with debugging info
-def download_images(img_tags):
-    ua = UserAgent()
-    for i, img in enumerate(tqdm(img_tags[:10], desc="Downloading images", unit="image")):
+# Function to download images
+def download_images(img_urls, output_dir):
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    
+    for i, url in enumerate(img_urls):
         try:
-            # Use fake_useragent to get a random User-Agent
-            headers = {'User-Agent': ua.random}
+            response = requests.get(url)
+            image = Image.open(BytesIO(response.content))
 
-            # Check for <picture> element to prioritize webp images
-            picture = img.find_parent('picture')
-            if picture:
-                # Prioritize webp source if available
-                source_tag = picture.find('source', type='image/webp')
-                if source_tag and 'srcset' in source_tag.attrs:
-                    img_url = source_tag['srcset']
-                else:
-                    # Fallback to img src if no webp source is found
-                    img_url = img['src']
+            # Convert RGBA images to RGB before saving as JPEG
+            if image.mode in ("RGBA", "P"):  # Check if the image has an alpha channel
+                image = image.convert("RGB")  # Convert to RGB
+            
+            # Determine file extension based on image mode
+            if image.mode == "RGB":
+                image_path = os.path.join(output_dir, f"non_menstrual_{i+1}.jpg")
+                image.save(image_path, "JPEG")  # Save as JPEG
             else:
-                # Handle regular img tags
-                img_url = img['src']
-
-            # Convert relative URLs to absolute URLs
-            img_url = urljoin(url, img_url)
-            print(f"Fetching image URL: {img_url}")
-
-            # Ensure all images are saved in jpg, png, or jpeg format
-            img_extension = img_url.split('.')[-1].split('?')[0].lower()
-            if img_extension not in ['jpg', 'jpeg', 'png']:
-                img_extension = 'jpg'  # Default to jpg if another format is encountered
-
-            img_name = os.path.join(base_dir, f"household_waste_{i + 1}.{img_extension}")
-            print(f"Downloading and saving image as: {img_name}")
-
-            # Attempt to download the image
-            img_data = requests.get(img_url, headers=headers)
-            img_data.raise_for_status()  # Ensure the image was fetched successfully
-            with open(img_name, 'wb') as handler:
-                handler.write(img_data.content)
-            print(f"Successfully downloaded {img_name}")
-
-            random_delay()  # Random delay to simulate human-like behavior
-
-        except requests.exceptions.RequestException as e:
-            print(f"Failed to download {img_url}: {e}")
+                # Save as PNG if image mode is not RGB
+                image_path = os.path.join(output_dir, f"non_menstrual_{i+1}.png")
+                image.save(image_path, "PNG")  # Save as PNG
+            
+            print(f"Downloaded {image_path}")
         except Exception as e:
-            print(f"An unexpected error occurred: {e}")
+            print(f"Could not download {url} - {e}")
 
-# Find all img tags and filter by valid extensions
-print("Searching for images on the page...")
-img_tags = soup.find_all('img')
+# Function to scrape images using BeautifulSoup
+def scrape_images(search_url, output_dir):
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    }
 
-# Filter to ensure only images with valid extensions are processed
-filtered_img_tags = [img for img in img_tags if img.get('src') and img['src'].split('.')[-1].split('?')[0].lower() in ['jpg', 'jpeg', 'png']]
+    response = requests.get(search_url, headers=headers)
+    soup = BeautifulSoup(response.text, 'html.parser')
 
-print(f"Found {len(filtered_img_tags)} valid images on the page.")
+    img_tags = soup.find_all("img")
+    
+    img_urls = []
+    for img in img_tags:
+        img_url = img.get("src")
+        if img_url and img_url.startswith("http"):
+            img_urls.append(img_url)
 
-if filtered_img_tags:
-    download_images(filtered_img_tags)
-else:
-    print("No valid images found on the page.")
+    # Download the images
+    download_images(img_urls, output_dir)
+
+# URL of the website you want to scrape images from
+search_url = "https://www.thoughtco.com/municipal-waste-and-landfills-overview-1434949"  # Replace this with a relevant website for menstrual waste
+
+# Set output directory to your specified path
+output_dir = r"C:\Users\TATHAGATA GHOSH\Desktop\hackX_env\Dataset\Tilottoma\dataset"
+
+# Scrape the images and save them
+scrape_images(search_url, output_dir)
