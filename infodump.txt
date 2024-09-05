@@ -67,3 +67,26 @@ Reducing landfill waste and ensuring that biodegradable materials are properly c
 Minimizing environmental harm from incineration and transportation.
 Providing data-driven insights that optimize resource use and reduce carbon footprints across waste management systems.
 The impact of this solution is a cleaner, more sustainable waste management process that promotes eco-friendly habits, reduces pollution, and contributes to a healthier environment.
+
+Convolutional Neural Networks (CNNs)
+Purpose: Recognize menstrual products despite shape distortion.
+Training: Use diverse datasets with images of menstrual products in various states (crumpled, partially visible, etc.).
+Pre-trained models: Leverage pre-trained models like ResNet, EfficientNet, or YOLO (You Only Look Once) for object detection, and fine-tune them with a specialized dataset for waste, focusing on menstrual products.
+b. Semantic Segmentation
+Purpose: Segment waste images into different material categories, distinguishing menstrual products from other materials.
+Model: Models like U-Net or Mask R-CNN can segment regions of the image that likely correspond to menstrual waste.
+Application: Instead of relying solely on object detection, this method can help segment out specific textures or regions (e.g., absorbent materials, packaging).
+c. Multi-Class Classification
+Purpose: Differentiate menstrual waste from other types of waste (e.g., cotton clothes, plastic wrappers) based on features like patterns, textures, and subtle material differences.
+Model: A multi-class classification model can be used, where one of the classes is menstrual waste, and others include cotton materials, plastic, and other categories.
+Techniques: Use texture and material feature extraction to improve classification accuracy. Models like DenseNet are good at learning subtle details and differences in material types.
+2. Material and Texture Analysis
+To address the similarity in materials (e.g., cotton, plastic) between menstrual products and other waste, an AI model can focus on material properties.
+
+a. Hyperspectral Imaging and Analysis
+Purpose: Detect differences in the chemical composition of waste items, such as polymers in plastic parts of menstrual products or absorbent materials in pads.
+Model: Use Spectral Classification models like Random Forest or SVM (Support Vector Machines) trained on hyperspectral data to identify chemical signatures unique to menstrual products.
+b. Texture Classification Models
+Purpose: Differentiate between cotton used in menstrual pads and similar cotton materials using texture patterns.
+Model: Local Binary Patterns (LBP) or Gabor filters can help extract texture features, which can be further classified by SVMs or CNNs.
+Application: Menstrual pads have specific patterns due to their design, and subtle differences in textures can be used to classify these products.
