@@ -1,0 +1,76 @@
+using System;
+using Emgu.CV;
+using Emgu.CV.CvEnum;
+using Emgu.CV.Structure;
+using Microsoft.ML;
+using Microsoft.ML.Transforms.Image;
+using Microsoft.ML.Data;
+
+namespace SmartBinApp
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            // Initialize camera (assumes Raspberry Pi camera setup)
+            VideoCapture capture = new VideoCapture(0); // Use camera index 0 for Raspberry Pi camera
+            Mat frame = new Mat();
+
+            // Load the pre-trained CNN model (ONNX or TensorFlow model)
+            string modelPath = "path/to/your_model.onnx";  // Path to your trained model
+            var mlContext = new MLContext();
+            var model = LoadModel(mlContext, modelPath);
+
+            Console.WriteLine("Starting smart bin detection...");
+
+            while (true)
+            {
+                // Capture image from the camera
+                capture.Read(frame);
+                if (!frame.IsEmpty)
+                {
+                    // Preprocess the captured frame and predict
+                    var prediction = PredictImage(mlContext, model, frame);
+
+                    // Display prediction
+                    Console.WriteLine($"Prediction: {(prediction.PredictedLabel == 1 ? "Menstrual Waste" : "Non-Menstrual Waste")}");
+                }
+            }
+        }
+
+        public static PredictionEngine<InputImageData, ImagePrediction> LoadModel(MLContext mlContext, string modelPath)
+        {
+            // Define input/output schema
+            var pipeline = mlContext.Transforms.ResizeImages(outputColumnName: "input", imageWidth: 224, imageHeight: 224, inputColumnName: nameof(InputImageData.Image))
+                .Append(mlContext.Transforms.ExtractPixels(outputColumnName: "input"))
+                .Append(mlContext.Model.LoadTensorFlowModel(modelPath).ScoreTensorName("output").AddInput("input").AddOutput("output"))
+                .Append(mlContext.Transforms.Conversion.MapValueToKey(outputColumnName: "PredictedLabel", inputColumnName: "output"));
+
+            // Train model
+            var model = pipeline.Fit(mlContext.Data.LoadFromEnumerable(new List<InputImageData>()));
+            return mlContext.Model.CreatePredictionEngine<InputImageData, ImagePrediction>(model);
+        }
+
+        public static ImagePrediction PredictImage(MLContext mlContext, PredictionEngine<InputImageData, ImagePrediction> model, Mat frame)
+        {
+            // Convert Mat (OpenCV image) to byte array
+            var imageData = new InputImageData { Image = frame.ToImage<Rgb, byte>().ToBitmap() };
+
+            // Predict
+            return model.Predict(imageData);
+        }
+    }
+
+    // Define classes for input/output of the model
+    public class InputImageData
+    {
+        [ImageType(224, 224)] // Adjust size according to the model
+        public Bitmap Image { get; set; }
+    }
+
+    public class ImagePrediction : ImageData
+    {
+        [ColumnName("PredictedLabel")]
+        public uint PredictedLabel { get; set; }
+    }
+}
