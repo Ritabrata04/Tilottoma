@@ -1,0 +1,36 @@
+[{
+  "_id": {
+    "$oid": "66dac142ea6aa9fd9534c638"
+  },
+  "image_id": 1,
+  "type_of_waste": 1,
+  "collection": 0.75,
+  "destination_zone": 3.5
+},
+{
+  "_id": {
+    "$oid": "66dac142ea6aa9fd9534c639"
+  },
+  "image_id": 2,
+  "type_of_waste": 2,
+  "collection": 0.5,
+  "destination_zone": 2
+},
+{
+  "_id": {
+    "$oid": "66dac142ea6aa9fd9534c63a"
+  },
+  "image_id": 3,
+  "type_of_waste": 1,
+  "collection": 1.25,
+  "destination_zone": 1
+},
+{
+  "_id": {
+    "$oid": "66dac142ea6aa9fd9534c63b"
+  },
+  "image_id": 4,
+  "type_of_waste": 3,
+  "collection": 0.85,
+  "destination_zone": 4
+}]
